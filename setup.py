@@ -8,9 +8,9 @@ setup(
     packages=['bioloid'],
     scripts=[],
     url='http://pypi.python.org/pypi/Bioloid/',
-    license='LICENSE.txt',
+    license='LICENSE',
     description='Provides access to boiloid devices.',
-    long_description=open('README.txt').read(),
+    long_description=open('README.md').read(),
     install_requires=[
         'pyyaml',
         'pyserial'
