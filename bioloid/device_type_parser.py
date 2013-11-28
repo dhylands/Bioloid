@@ -61,7 +61,9 @@ class DeviceTypeParser(object):
             for line in bld_file:
                 self._line_num += 1
                 # Strip comments
-                line = line[0:line.find("#")]
+                comment_idx = line.find("#")
+                if comment_idx >= 0:
+                    line = line[0:comment_idx]
                 words = line.split()
                 if len(words) == 0:
                     # Ignore blank lines

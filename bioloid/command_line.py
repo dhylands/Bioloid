@@ -53,6 +53,8 @@ class CommandLineBase(Cmd):
     _quitting = False
 
     def __init__(self, log=None, *args, **kwargs):
+        if 'stdin' in kwargs:
+            Cmd.use_rawinput = 0
         Cmd.__init__(self, *args, **kwargs)
         self.command = None
         try:
@@ -114,13 +116,24 @@ class CommandLineBase(Cmd):
         if CommandLineBase._quitting:
             return True
 
+    def precmd(self, line):
+        # Strip comments
+        comment_idx = line.find("#")
+        if comment_idx >= 0:
+            line = line[0:comment_idx]
+            line = line.strip()
+        return line
+
     def onecmd(self, line):
         """Clean up some Control-D output. Call print so that the user's shell
         prompt starts on a new line.
 
         """
         if line == "EOF":
-            print()
+            if Cmd.use_rawinput:
+                # This means that we printed a prompt, and we'll want to
+                # print a newline to pretty things up for the caller.
+                print('')
             CommandLineBase._prompt_array.pop()
             return True
         return Cmd.onecmd(self, line)
@@ -128,7 +141,10 @@ class CommandLineBase(Cmd):
     def cmdloop(self, *args, **kwargs):
         """We override this to support auto_cmdloop."""
         CommandLineBase._cmdloop_executed = True
-        self.prompt = " ".join(CommandLineBase._prompt_array) + "> "
+        if Cmd.use_rawinput:
+            self.prompt = " ".join(CommandLineBase._prompt_array) + "> "
+        else:
+            self.prompt = ""
         return Cmd.cmdloop(self, *args, **kwargs)
 
     def parseline(self, line):
@@ -138,7 +154,8 @@ class CommandLineBase(Cmd):
         """
         (command, arg, line) = Cmd.parseline(self, line)
         self.command = command
-        command = command.replace("-", "_")
+        if command:
+            command = command.replace("-", "_")
         return command, arg, line
 
     def completenames(self, text, *ignored):
@@ -233,6 +250,14 @@ class CommandLine(CommandLineBase):
         """
         self._bus.send_action()
 
+    def do_echo(self, line):
+        """Prints the rest of the line to the output.
+
+        This is mostly useful when processing from a script.
+
+        """
+        self._log.info(line)
+
     def do_scan(self, line):
         """bioloid> scan
 
@@ -302,6 +327,14 @@ class CommandLine(CommandLineBase):
             self._log.info("%-10s Model: %5u with %2d registers",
                            dev_type.name(), dev_type.model(),
                            dev_type.num_regs())
+
+    def do_test(self, line):
+        """bioloid> test
+        """
+        if self._bus.__class__.__name__ != "TestBus":
+            self._log.error("The test command requires the TestBus")
+            return
+        return TestCommandLine(self._bus).auto_cmdloop(line)
 
 
 class DevTypeCommandLine(CommandLineBase):
@@ -654,3 +687,71 @@ class DevTypeIdCommandLine(CommandLineBase):
 
         """
         self._dev_type.dump_regs_raw()
+
+
+class TestCommandLine(CommandLineBase):
+    """Implements commmands used for testing.
+
+    You can queue up command packets, response packets, or timeouts.
+    Whenever the TestBus is asked to send a packet, it will compare the
+    packet to send against the top of the queue, and if it doesn't match
+    then it will generate a failure message and quit.
+
+    Each time read_status_packet is called, it looks for a response packet
+    or timeout at the front of the queue, and returns the corresponding
+    response.
+
+    """
+
+    def __init__(self, bus, *args, **kwargs):
+        CommandLineBase.__init__(self, *args, **kwargs)
+        self._bus = bus
+
+    def do_cmd(self, line):
+        """bioloid> test cmd <hex-id> <command> <hex-data> ...
+
+        Queues up an expected command packet. The command will be an ascii
+        version of the command, and data is assumed to be hexadecimal bytes
+        making up the rest of the packet (i.e. without the 0x prefix).
+        The packet preamble (2 0xff's), length, and checksum will all be
+        calculated autmatically.
+
+        """
+        pass
+
+    def do_cmd_raw(self, line):
+        """bioloid> test cmd-raw <hex-data> ...
+
+        Queues up an expected command packet. The <data> is expected to
+        include the preamble, id, command, length, data, and checksum.
+
+        """
+
+    def do_rsp(self, line):
+        """bioloid> test rsp <hex-id> <error> <hex-data> ...
+
+        Queues up an expected response packet. The error will be an ascii
+        version of the error code, and data is assumed to be hexadecimal
+        bytes making up the rest of the packet (i.e. without the 0x prefx).
+        The packet preamble (2 0xff's), length, and checksum will all be
+        calculated autmatically.
+
+        """
+        pass
+
+    def do_rsp_raw(self, line):
+        """bioloid> test rsp-raw <hex-data> ...
+
+        Queues up an expected response packet. The <hex-data> is expected to
+        include the preamble, id, error code, length, data, and checksum.
+
+        """
+        pass
+
+    def do_rsp_timeout(self,  line):
+        """bioloid> test rsp-timeout
+
+        Queues up a timeout response.
+
+        """
+        pass
