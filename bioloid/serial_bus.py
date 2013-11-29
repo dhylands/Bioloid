@@ -49,9 +49,9 @@ class SerialBus(Bus):
             return ord(data[0])
         return None
 
-    def write_buffered_data(self, data):
+    def write_packet(self, packet_data):
         """Function implemented by a derived class which actually writes
         the data to a device.
 
         """
-        self._serial_port.write(data)
+        self._serial_port.write(packet_data)

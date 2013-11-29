@@ -57,6 +57,7 @@ class Command(object):
         RESET:       "RESET",
         SYNC_WRITE:  "SYNC_WRITE"
     }
+    cmd_id = None
 
     def __init__(self, cmd):
         self._cmd = cmd
@@ -70,6 +71,18 @@ class Command(object):
         if self._cmd in Command.cmd_str:
             return Command.cmd_str[self._cmd]
         return "0x%02x" % self._cmd
+
+    @staticmethod
+    def parse(string):
+        if Command.cmd_id is None:
+            Command.cmd_id = {}
+            for cmd_id in Command.cmd_str:
+                cmd_str = Command.cmd_str[cmd_id].lower()
+                Command.cmd_id[cmd_str] = cmd_id
+        string = string.lower()
+        if string in Command.cmd_id:
+            return Command.cmd_id[string]
+        raise ValueError("Unrecognized command: '%s'" % string)
 
 
 class ErrorCode(object):
@@ -122,7 +135,7 @@ class ErrorCode(object):
     @staticmethod
     def parse(error_str):
         """Parses a comma separated list of error strings to produce
-        the corresponding mas.
+        the corresponding mask or value.
 
         """
         if error_str.lower() == "none":
@@ -254,8 +267,7 @@ class Packet(object):
         if len(self._param) + 2 >= self._length:
             self._state_func = self._state_idle
             # char is the checksum
-            # We need the % 256 to bring the result back to 8-bits
-            self._checksum = ~self._checksum % 256
+            self._checksum = ~self._checksum & 0xff
             if char == self._checksum:
                 return ErrorCode.NONE
             self._log.error("Checksum Error: got 0x%02x expecting 0x%02x",

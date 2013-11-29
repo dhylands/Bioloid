@@ -35,17 +35,35 @@ def parse_float(string, label=None):
     return val
 
 
-def parse_int(string, label=None):
+def parse_int(string, label=None, base=0):
     """Convert a string into an integer.
 
     Raises a ValueError exception if the conversion fails.
 
     """
     try:
-        val = int(string, 0)
+        val = int(string, base)
     except ValueError:
         if label:
             raise ValueError("Expecting an integer %s. Found '%s'"
                              % (label, string))
         raise ValueError("Expecting an integer. Found '%s'" % string)
     return val
+
+
+def parse_byte_array(words, base=0):
+    """Parses words as an array of hex-strings and returns an array
+    of bytes containing the corresponding hex values.
+
+    """
+    data = ""
+    for byte_str in words:
+        byte = parse_int(byte_str, "byte", base=base)
+        if byte < 0 or byte > 255:
+            if base == 16:
+                raise ValueError("Expecting hex-byte to be in range 00-FF. " +
+                                 "Found: %x" % byte)
+            raise ValueError("Expecting byte to be in range 0-256. " +
+                             "Found: %s" % byte_str)
+        data += chr(byte)
+    return data

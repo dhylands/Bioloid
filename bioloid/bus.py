@@ -153,10 +153,10 @@ class Bus(object):
         if self._show_packets:
             dump_mem(self._buffered_data, prefix="W", show_ascii=False,
                      print_func=self._log.debug)
-        self.write_buffered_data(self._buffered_data)
+        self.write_packet(self._buffered_data)
         self._buffered_data = ""
 
-    def write_buffered_data(self, data):
+    def write_packet(self, packet_data):
         """Function implemented by a derived class which actually writes
         the data to a device.
 

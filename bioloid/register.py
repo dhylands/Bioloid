@@ -92,7 +92,7 @@ class Register(object):
 
     def parse_raw(self, string):
         """Parses a string to convert it into a raw register value."""
-        raw_val = parse_int(string)
+        raw_val = parse_int(string, "value")
         self.check_range(raw_val)
         return raw_val
 

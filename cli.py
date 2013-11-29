@@ -124,7 +124,8 @@ def main():
         bus = SerialBus(serial_port, show_packets=args.debug)
     if args.filename:
         with open(args.filename) as cmd_file:
-            cmd_line = CommandLine(bus, dev_types, stdin=cmd_file)
+            cmd_line = CommandLine(bus, dev_types, stdin=cmd_file,
+                                   filename=args.filename)
             cmd_line.auto_cmdloop('')
     else:
         cmd_line = CommandLine(bus, dev_types)
