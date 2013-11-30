@@ -17,7 +17,7 @@ class DeviceTypes(object):
 
     def __iter__(self):
         """For iteration purposes, we want to look like an array."""
-        self._device_types_iter = sorted(self._device_types.values(), 
+        self._device_types_iter = sorted(self._device_types.values(),
                                          key=lambda dev_type: dev_type.name())
         return self._device_types_iter.__iter__()
 

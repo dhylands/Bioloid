@@ -33,7 +33,7 @@ class SerialBus(Bus):
 
     def __init__(self, serial_port, show_packets=False):
         Bus.__init__(self, show_packets)
-        self._serial_port = serial_port
+        self.serial_port = serial_port
 
     def read_byte(self):
         """Reads a byte from the bus. This function will return None if
@@ -44,7 +44,7 @@ class SerialBus(Bus):
         receiving a packet and sending a response.
 
         """
-        data = self._serial_port.read()
+        data = self.serial_port.read()
         if data:
             return ord(data[0])
         return None
@@ -54,4 +54,4 @@ class SerialBus(Bus):
         the data to a device.
 
         """
-        self._serial_port.write(packet_data)
+        self.serial_port.write(packet_data)

@@ -112,7 +112,6 @@ def main():
     parser.parse_dev_type_files(script_dir)
     bus = None
 
-
     if args.test:
         bus = TestBus(show_packets=args.debug)
     elif args.port:

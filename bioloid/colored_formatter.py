@@ -100,7 +100,7 @@ class ColoredFormatter(logging.Formatter):
         return "%s.%03d" % (time.strftime("%H:%M:%S", rectime), record.msecs)
 
 
-def _main():
+def test_main():
     """Test (put into a function so that pylint doesn't complain about
     variables being constants).
 
@@ -137,4 +137,4 @@ def _main():
     log.critical('Something critical happened.')  # and this one too.
 
 if __name__ == "__main__":
-    _main()
+    test_main()

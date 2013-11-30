@@ -9,16 +9,19 @@ from bioloid import packet
 from bioloid.dumpmem import dump_mem
 
 
-class Error(Exception):
+class BusError(Exception):
     """Exception which is raised when non-successful status packet."""
 
     def __init__(self, error_code, *args, **kwargs):
-        self._error_code = error_code
+        self.error_code = error_code
         Exception.__init__(self, *args, **kwargs)
 
-    def error_code(self):
+    def get_error_code(self):
         """Retrieves the error code associated with the exception."""
-        return self._error_code
+        return self.error_code
+
+    def __str__(self):
+        return "Rcvd Status: " + str(packet.ErrorCode(self.error_code))
 
 
 class Bus(object):
@@ -30,10 +33,14 @@ class Bus(object):
     """
 
     def __init__(self, show_packets, log=None):
-        self._show_packets = show_packets
-        self._buffered_data = ""
-        self._checksum = 0
-        self._log = log or logging.getLogger(__name__)
+        self.show_packets = show_packets
+        self.buffered_data = ""
+        self.checksum = 0
+        self.log = log or logging.getLogger(__name__)
+
+    def set_log(self, log):
+        """Sets the log to use for logging output."""
+        self.log = log
 
     def read_byte(self):
         """Reads a byte from the bus. This function will return None if
@@ -52,26 +59,29 @@ class Bus(object):
     def read_status_packet(self):
         """Reads a status packet and returns it.
 
-        Rasises a bioloid.bus.Error if an error occurs.
+        Rasises a bioloid.bus.BusError if an error occurs.
 
         """
         pkt = packet.Packet()
         while True:
             byte = self.read_byte()
             if byte is None:
-                raise Error(packet.ErrorCode.TIMEOUT)
-            self._buffered_data += chr(byte)
+                raise BusError(packet.ErrorCode.TIMEOUT)
+            self.buffered_data += chr(byte)
             err = pkt.process_byte(byte)
             if err != packet.ErrorCode.NOT_DONE:
                 break
         if err != packet.ErrorCode.NONE:
-            self._log.error("Rcvd Status: %s" % packet.ErrorCode(err))
-            raise Error(err)
-        if self._show_packets:
-            dump_mem(self._buffered_data, prefix="R", show_ascii=False,
-                     print_func=self._log.debug)
+            self.log.error("Rcvd Status: %s" % packet.ErrorCode(err))
+            raise BusError(err)
+        if self.show_packets:
+            dump_mem(self.buffered_data, prefix="R", show_ascii=False,
+                     print_func=self.log.debug)
         err = pkt.error_code()
-        self._log.debug("Rcvd Status: %s" % packet.ErrorCode(err))
+        if err != packet.ErrorCode.NONE:
+            self.log.error("Rcvd Status: %s" % packet.ErrorCode(err))
+            raise BusError(err)
+        self.log.debug("Rcvd Status: %s" % packet.ErrorCode(err))
         return pkt
 
     def scan(self, start_id, num_ids, dev_found, dev_missing):
@@ -105,7 +115,7 @@ class Bus(object):
         at the sam time.
 
         """
-        self._log.debug("Sending ACTION")
+        self.log.debug("Sending ACTION")
         self.send_cmd_header(packet.Id.BROADCAST, 0, packet.Command.ACTION)
         self.send_checksum()
 
@@ -114,13 +124,13 @@ class Bus(object):
         the byte into the checksum.
 
         """
-        self._checksum += byte
-        self._buffer_byte(byte)
+        self.checksum += byte
+        self.buffer_byte(byte)
 
     def send_checksum(self):
         """Send the checksum, which is the last byte of the packet."""
-        self.send_byte(~self._checksum & 0xff)
-        self._write_buffer()
+        self.send_byte(~self.checksum & 0xff)
+        self.write_buffer()
 
     def send_cmd_header(self, dev_id, param_len, cmd):
         """Sends the command header, which is common to all of the
@@ -131,10 +141,10 @@ class Bus(object):
         figuring out how many extra parameter bytes are being sent.
 
         """
-        self._buffered_data = ""
+        self.buffered_data = ""
         self.send_byte(0xff)
         self.send_byte(0xff)
-        self._checksum = 0
+        self.checksum = 0
         self.send_byte(dev_id)
         self.send_byte(param_len + 2)  # 1 for len, 1 for cmd
         self.send_byte(cmd)
@@ -144,17 +154,17 @@ class Bus(object):
         for byte in data:
             self.send_byte(ord(byte))
 
-    def _buffer_byte(self, byte):
+    def buffer_byte(self, byte):
         """Adds a byte to the buffer of data to send."""
-        self._buffered_data += chr(byte)
+        self.buffered_data += chr(byte)
 
-    def _write_buffer(self):
+    def write_buffer(self):
         """Writes all of the buffered bytes to the serial port."""
-        if self._show_packets:
-            dump_mem(self._buffered_data, prefix="W", show_ascii=False,
-                     print_func=self._log.debug)
-        self.write_packet(self._buffered_data)
-        self._buffered_data = ""
+        if self.show_packets:
+            dump_mem(self.buffered_data, prefix="W", show_ascii=False,
+                     print_func=self.log.debug)
+        self.write_packet(self.buffered_data)
+        self.buffered_data = ""
 
     def write_packet(self, packet_data):
         """Function implemented by a derived class which actually writes

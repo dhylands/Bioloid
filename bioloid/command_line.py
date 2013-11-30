@@ -5,15 +5,17 @@ devices to be  queried and manipulated.
 
 import sys
 import logging
+import shlex
 
 from cmd import Cmd
 from bioloid import packet
 from bioloid.device import Device
 from bioloid.column import column_print
 from bioloid.dumpmem import dump_mem
-from bioloid.parse_utils import str_to_int
 from bioloid.parse_utils import parse_int, parse_byte_array
 from bioloid.test_bus import TestError, TestPacket, TestBus
+from bioloid.bus import BusError
+
 
 def trim(docstring):
     """Trims the leading spaces from docstring comments.
@@ -45,6 +47,7 @@ def trim(docstring):
     # Return a single string:
     return '\n'.join(trimmed)
 
+
 class CommandLineOutput(object):
     """A class which allows easy integration of Cmd output into logging
     and also allows for easy capture of the output for testing purposes.
@@ -52,12 +55,31 @@ class CommandLineOutput(object):
     """
 
     def __init__(self, log=None):
-        self.captured_output = []
+        self.captured_output = None
+        self.error_count = 0
         self.buffered_output = ""
         self.log = log or logging.getLogger(__name__)
 
+    def set_capture_output(self, capture_output):
+        """Sets capture_output flag, which determines whether the logging
+        output is captured or not.
+
+        """
+        if capture_output:
+            self.captured_output = []
+        else:
+            self.captured_output = None
+
     def get_captured_output(self):
-        return seld.captured_output
+        """Returns the logging output which has been captured so far."""
+        return self.captured_output
+
+    def get_error_count(self):
+        """Returns the number of errors which have been recorded in the
+        currently capttured output.
+
+        """
+        return self.error_count
 
     def flush(self):
         """Used by Cmd just after printing the prompt."""
@@ -65,15 +87,22 @@ class CommandLineOutput(object):
         self.buffered_output = ""
         self.write_prompt(prompt)
 
+    def debug(self, msg, *args, **kwargs):
+        """Captures and logs a debug level message."""
+        self.log.debug(msg, *args, **kwargs)
+
     def info(self, msg, *args, **kwargs):
         """Captures and logs an info level message."""
-        self.captured_output.append(('info', msg % args))
-        self.log.info(msg, *args)
+        if self.captured_output is not None:
+            self.captured_output.append(('info', msg % args))
+        self.log.info(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         """Captures and logs an error level message."""
-        self.captured_output.append(('error', msg % args))
-        self.log.error(msg, *args)
+        if self.captured_output is not None:
+            self.captured_output.append(('error', msg % args))
+        self.error_count += 1
+        self.log.error(msg, *args, **kwargs)
 
     def write(self, string):
         """Characters to output. Lines will be delimited by newline
@@ -102,6 +131,7 @@ class CommandLineOutput(object):
         sys.stdout.write(prompt)
         sys.stdout.flush()
         self.captured_output = []
+        self.error_count = 0
 
 
 class CommandLineBase(Cmd):
@@ -256,8 +286,13 @@ class CommandLineBase(Cmd):
         try:
             return Cmd.onecmd(self, line)
         except ValueError as err:
+            self.log.error("ValueError")
             return self.handle_exception(err)
         except TestError as err:
+            self.log.error("TestError")
+            return self.handle_exception(err)
+        except BusError as err:
+            self.log.error("BusError")
             return self.handle_exception(err)
 
     def cmdloop(self, *args, **kwargs):
@@ -322,9 +357,11 @@ class CommandLine(CommandLineBase):
 
     """
 
-    def __init__(self, bus, dev_types, *args, **kwargs):
+    def __init__(self, bus, dev_types, capture_output=False, *args, **kwargs):
         CommandLineBase.__init__(self, *args, **kwargs)
         self.bus = bus
+        self.bus.set_log(self.log)
+        self.log.set_capture_output(capture_output)
         self.dev_types = dev_types
         # We use the device types as commands, so add a do_xxx where
         # xxx is the device type name.
@@ -344,7 +381,7 @@ class CommandLine(CommandLineBase):
     def cb_complete_device_type(self, text, line, begin_idx, end_idx):
         """Completion support for device types."""
         return [dt_name for dt_name in self.dev_types.get_names()
-                            if dt_name.startswith(text)]
+                if dt_name.startswith(text)]
 
     def cb_do_device_type(self, line):
         """bioloid> {command}
@@ -376,7 +413,7 @@ class CommandLine(CommandLineBase):
         This is mostly useful when processing from a script.
 
         """
-        self.log.info(line)
+        self.log.info("%s", line)
 
     def do_scan(self, line):
         """bioloid> scan
@@ -400,17 +437,17 @@ class CommandLine(CommandLineBase):
         self.scan_idx = 0
         if num_ids < 100:
             servo_id_found = self.bus.scan(0, num_ids,
+                                           self.cb_scan_dev_found,
+                                           self.cb_scan_dev_missing)
+            sensor_id_found = self.bus.scan(100, num_ids,
                                             self.cb_scan_dev_found,
                                             self.cb_scan_dev_missing)
-            sensor_id_found = self.bus.scan(100, num_ids,
-                                             self.cb_scan_dev_found,
-                                             self.cb_scan_dev_missing)
             if not servo_id_found and not sensor_id_found:
                 self.log.info("No devices found")
         else:
             if not self.bus.scan(0, num_ids,
-                                  self.cb_scan_dev_found,
-                                  self.cb_scan_dev_missing):
+                                 self.cb_scan_dev_found,
+                                 self.cb_scan_dev_missing):
                 self.log.info("No devices found")
 
     def cb_scan_dev_found(self, bus, dev):
@@ -421,7 +458,7 @@ class CommandLine(CommandLineBase):
         model = ord(data[0]) + ord(data[1]) * 256
         version = ord(data[2])
         self.log.info("ID: %3d Model: %5u Version: %5u",
-                       dev.dev_id(), model, version)
+                      dev.get_dev_id(), model, version)
 
     def cb_scan_dev_missing(self, bus, dev):
         """Called whenever a device fails to response."""
@@ -441,8 +478,8 @@ class CommandLine(CommandLineBase):
         """
         for dev_type in self.dev_types:
             self.log.info("%-10s Model: %5u with %2d registers",
-                           dev_type.name(), dev_type.model(),
-                           dev_type.num_regs())
+                          dev_type.name(), dev_type.model(),
+                          dev_type.num_regs())
 
     def do_test(self, line):
         """bioloid> test
@@ -450,7 +487,7 @@ class CommandLine(CommandLineBase):
         if not isinstance(self.bus, TestBus):
             self.log.error("The test command requires the TestBus")
             return
-        return TestCommandLine(self.bus).auto_cmdloop(line)
+        return TestCommandLine(self.bus, self.dev_types).auto_cmdloop(line)
 
 
 class DevTypeCommandLine(CommandLineBase):
@@ -539,7 +576,7 @@ class DevTypeIdCommandLine(CommandLineBase):
         self.dev_type = dev_type
         self.bus = bus
         self.dev_id = dev_id
-        self.dev = Device(bus, dev_id)
+        self.dev = Device(bus, dev_id, log=self.log)
         self.add_completion_funcs(("get", "get-raw", "set", "set-raw",
                                    "read-data", "rd", "write-data", "wd",
                                    "reg-write", "rw", "reg", "reg-raw"),
@@ -557,7 +594,7 @@ class DevTypeIdCommandLine(CommandLineBase):
 
         """
         if not self.dev.ping():
-            self.log.error("device %d not responding", self.dev.dev_id())
+            self.log.error("device %d not responding", self.dev.get_dev_id())
 
     def get_reg(self, reg_name, raw):
         """Retrieves a (or all) register from the device and prints the
@@ -592,7 +629,7 @@ class DevTypeIdCommandLine(CommandLineBase):
                           reg.name()])
         column_print("<<>< ", lines, print_func=self.log.info)
 
-    def set_reg(self, line, raw):
+    def set_reg(self, line, raw, deferred=False):
         """Sets a register to a value. 'raw' determines if the value is a raw
         register value, or a "formatted" value.
 
@@ -603,12 +640,12 @@ class DevTypeIdCommandLine(CommandLineBase):
         reg = self.dev_type.get_register_by_name(args[0])
         if reg is None:
             raise ValueError("Expecting register-name or numeric offset. " +
-                            "Found '%s'" % args[0])
+                             "Found '%s'" % args[0])
         if raw:
             val = reg.parse_raw(args[1])
         else:
             val = reg.parse(args[1])
-        self.dev.write_reg(reg, val)
+        self.dev.write_reg(reg, val, deferred)
 
     def parse_offset_and_data(self, line):
         """Parses a register offset (or name) and raw bytes to write into
@@ -622,7 +659,7 @@ class DevTypeIdCommandLine(CommandLineBase):
         offset = self.dev_type.get_offset_by_name(args[0])
         if offset is None:
             raise ValueError("Expecting register-name or numeric offset. " +
-                             "Found '%s'"% args[0])
+                             "Found '%s'" % args[0])
         data = parse_byte_array(args[1:])
         return offset, data
 
@@ -670,6 +707,15 @@ class DevTypeIdCommandLine(CommandLineBase):
 
         """
         self.set_reg(line, raw=False)
+
+    def do_deferred_set(self, line):
+        """bioloid> dev-type id deferrd_set offset-or-register-name value
+
+        Sets the value of a register using the natural units of the
+        register type (degrees, volts, etc).
+
+        """
+        self.set_reg(line, raw=False, deferred=True)
 
     def do_set_raw(self, line):
         """bioloid> device-type id set offset-or-register-name value
@@ -729,8 +775,8 @@ class DevTypeIdCommandLine(CommandLineBase):
         Alias for write-data."""
         return self.do_write_data(line)
 
-    def do_reg_write(self, line):
-        """bioloid> device-type id reg-wite offset-or-register-name data ...
+    def do_deferred_write(self, line):
+        """bioloid> device-type id deferred-write offset-or-reg-name data ...
 
         Issues the REG_WRITE command to the indicated device. The data
         is parsed as individual bytes, and may be in decimal, octal (if
@@ -738,15 +784,15 @@ class DevTypeIdCommandLine(CommandLineBase):
 
         """
         offset, data = self.parse_offset_and_data(line)
-        self.dev.deferred_write(offset, data)
+        self.dev.write(offset, data, deferred=True)
 
-    def do_rw(self, line):
-        """bioloid> device-type id rw offset data ...
+    def do_dw(self, line):
+        """bioloid> device-type id dw offset data ...
 
-        Alias for reg-write.
+        Alias for deferred-write.
 
         """
-        return self.do_reg_write(line)
+        return self.do_deferred_write(line)
 
     def do_reset(self, _):
         """bioloid> device-type id reset
@@ -799,9 +845,10 @@ class TestCommandLine(CommandLineBase):
 
     """
 
-    def __init__(self, bus, *args, **kwargs):
+    def __init__(self, bus, dev_types, *args, **kwargs):
         CommandLineBase.__init__(self, *args, **kwargs)
         self.bus = bus
+        self.dev_types = dev_types
 
     def do_cmd(self, line):
         """bioloid> test cmd <hex-id> <command> <hex-data> ...
@@ -878,3 +925,39 @@ class TestCommandLine(CommandLineBase):
 
         """
         self.bus.queue(TestPacket(TestPacket.TIMEOUT))
+
+    def do_output(self, line):
+        """bioloid> test output "output-compare" <command>
+
+        Executes <command> and verified that the output is "output-compare"
+
+        """
+        words = shlex.split(line)
+        cmd_line = CommandLine(self.bus, self.dev_types, capture_output=True)
+        cmd_line.auto_cmdloop('  '.join(words[1:]))
+        test_output = CommandLineBase.output.get_captured_output()
+        if len(test_output) != 1 or test_output[0][1] != words[0]:
+            raise TestError("Test Failed. Expected '%s' got '%s'" %
+                            (words[0], test_output[0][1]))
+
+    def do_error(self, line):
+        """bioloid> test error <command>
+
+        Executes <command> and verifies that an error occurred."
+
+        """
+        cmd_line = CommandLine(self.bus, self.dev_types, capture_output=True)
+        cmd_line.auto_cmdloop(line)
+        if CommandLineBase.output.get_error_count() == 0:
+            raise TestError("Test Failed. Expected error.")
+
+    def do_success(self, line):
+        """bioloid> test success <command>
+
+        Executes <command> and verifies that no error occurred."
+
+        """
+        cmd_line = CommandLine(self.bus, self.dev_types, capture_output=True)
+        cmd_line.auto_cmdloop(line)
+        if CommandLineBase.output.get_error_count() > 0:
+            raise TestError("Test Failed. Encountered error.")

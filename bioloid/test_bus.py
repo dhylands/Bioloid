@@ -12,13 +12,15 @@ from the response packet at the front of the queue.
 
 import logging
 
-from bioloid.bus import Bus
-from bioloid.packet import Packet
+from bioloid.bus import BusError, Bus
+from bioloid.packet import ErrorCode
 from bioloid.dumpmem import dump_mem
+
 
 class TestError(Exception):
     """Error raised by this module when a test failure occurs."""
     pass
+
 
 class TestPacket(object):
     """Implements a packet variant which knows what type of packet it is."""
@@ -36,9 +38,11 @@ class TestPacket(object):
         return self.pkt_type
 
     def packet_data(self):
+        """Returns the packet data associatedd with this packet."""
         return self.pkt_data
 
     def compare_data(self, cmp_data):
+        """Compares the packet data with the indicated data."""
         if len(cmp_data) != len(self.pkt_data):
             return False
         for i in range(len(cmp_data)):
@@ -62,6 +66,20 @@ class TestBus(Bus):
     def queue(self, packet):
         """Adds a packet to the end of the queue."""
         self.pkt_queue.append(packet)
+
+    def read_status_packet(self):
+        """Intercept exceptions so that our test framework can deal with
+        them, and not cause the command framework to exit.
+
+        """
+        try:
+            packet = Bus.read_status_packet(self)
+            return packet
+        except BusError as ex:
+            err = ex.get_error_code()
+            if err == ErrorCode.TIMEOUT:
+                self.log.error("Rcvd Status: %s" % ErrorCode(err))
+            return None
 
     def read_byte(self):
         """Reads a byte from the bus. This function will return None if
@@ -113,9 +131,3 @@ class TestBus(Bus):
             dump_mem(pkt.packet_data(), prefix="  E", show_ascii=False,
                      print_func=self.log.error)
             raise TestError("write_packet: Unexpected packet written")
-
-
-
-
-
-        
