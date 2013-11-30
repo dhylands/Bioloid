@@ -45,17 +45,79 @@ def trim(docstring):
     # Return a single string:
     return '\n'.join(trimmed)
 
+class CommandLineOutput(object):
+    """A class which allows easy integration of Cmd output into logging
+    and also allows for easy capture of the output for testing purposes.
+
+    """
+
+    def __init__(self, log=None):
+        self.captured_output = []
+        self.buffered_output = ""
+        self.log = log or logging.getLogger(__name__)
+
+    def get_captured_output(self):
+        return seld.captured_output
+
+    def flush(self):
+        """Used by Cmd just after printing the prompt."""
+        prompt = self.buffered_output
+        self.buffered_output = ""
+        self.write_prompt(prompt)
+
+    def info(self, msg, *args, **kwargs):
+        """Captures and logs an info level message."""
+        self.captured_output.append(('info', msg % args))
+        self.log.info(msg, *args)
+
+    def error(self, msg, *args, **kwargs):
+        """Captures and logs an error level message."""
+        self.captured_output.append(('error', msg % args))
+        self.log.error(msg, *args)
+
+    def write(self, string):
+        """Characters to output. Lines will be delimited by newline
+        characters.
+
+        This routine breaks the output into lines and logs each line
+        individually.
+
+        """
+        if len(self.buffered_output) > 0:
+            string = self.buffered_output + string
+            self.buffered_output = ""
+        while True:
+            nl_index = string.find('\n')
+            if nl_index < 0:
+                self.buffered_output = string
+                return
+            self.info(string[0:nl_index])
+            string = string[nl_index + 1:]
+
+    def write_prompt(self, prompt):
+        """A derived class can override this method to split out the
+        prompt from regular output.
+
+        """
+        sys.stdout.write(prompt)
+        sys.stdout.flush()
+        self.captured_output = []
+
 
 class CommandLineBase(Cmd):
     """Contains common customizations to the Cmd class."""
 
     cmd_stack = []
     quitting = False
+    output = None
 
     def __init__(self, log=None, filename=None, *args, **kwargs):
         if 'stdin' in kwargs:
             Cmd.use_rawinput = 0
-        Cmd.__init__(self, *args, **kwargs)
+        if not CommandLineBase.output:
+            CommandLineBase.output = CommandLineOutput(log=log)
+        self.log = CommandLineBase.output
+        Cmd.__init__(self, stdout=self.log, *args, **kwargs)
         if '-' not in Cmd.identchars:
             Cmd.identchars += '-'
         self.filename = filename
@@ -72,7 +134,6 @@ class CommandLineBase(Cmd):
             readline.set_completer_delims(delims.replace("-", ""))
         except ImportError:
             pass
-        self.log = log or logging.getLogger(__name__)
 
     def add_completion_funcs(self, names, complete_func_name):
         """Helper function which adds a completion function for an array of
@@ -154,12 +215,8 @@ class CommandLineBase(Cmd):
                 if (self.cmdloop_executed and
                         not CommandLineBase.quitting):
                     self.cmdloop()
-        except ValueError as err:
-            return self.handle_exception(err)
-        except TestError as err:
-            return self.handle_exception(err)
         except KeyboardInterrupt:
-            print
+            print('')
             CommandLineBase.quitting = True
             return True
         if CommandLineBase.quitting:
@@ -196,7 +253,12 @@ class CommandLineBase(Cmd):
         if comment_idx >= 0:
             line = line[0:comment_idx]
             line = line.strip()
-        return Cmd.onecmd(self, line)
+        try:
+            return Cmd.onecmd(self, line)
+        except ValueError as err:
+            return self.handle_exception(err)
+        except TestError as err:
+            return self.handle_exception(err)
 
     def cmdloop(self, *args, **kwargs):
         """We override this to support auto_cmdloop."""
@@ -303,6 +365,10 @@ class CommandLine(CommandLineBase):
 
         """
         self.bus.send_action()
+
+    def do_args(self, line):
+        """Prints out the command line arguments."""
+        self.log.info("args line = '%s'", line)
 
     def do_echo(self, line):
         """Prints the rest of the line to the output.
