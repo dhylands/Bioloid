@@ -9,12 +9,35 @@ from bioloid import packet
 from bioloid import bus
 
 
+class DeviceRegister(object):
+    """Links a register and device."""
+    
+    def __init__(self, dev, reg):
+        self.dev = dev
+        self.reg = reg
+
+    def get(self):
+        """Retrieves the value for the associated register from the
+        associated device.
+
+        """
+        return self.reg.raw_to_val(self.dev.read_reg(self.reg))
+
+    def set(self, value, deferred=False):
+        """Sets the value for the associated register on the
+        associated device.
+
+        """
+        self.dev.write_reg(self.reg, self.reg.val_to_raw(value), deferred)
+
+
 class Device(object):
     """Base class for communicating with a bioloid device."""
 
-    def __init__(self, dev_bus=None, dev_id=None, log=None):
+    def __init__(self, dev_bus=None, dev_id=None, dev_type=None, log=None):
         self.bus = dev_bus
         self.dev_id = dev_id
+        self.dev_type = dev_type
         self.log = log or logging.getLogger(__name__)
 
     def set_bus_and_id(self, dev_bus, dev_id):
@@ -25,9 +48,21 @@ class Device(object):
         self.bus = dev_bus
         self.dev_id = dev_id
 
+    def set_dev_type(self, dev_type):
+        """Sets the device type associated with this device."""
+        self.dev_type = dev_type
+
     def get_dev_id(self):
         """Returns the device id associated with this device object."""
         return self.dev_id
+
+    def get_dev_reg(self, name):
+        if not self.dev_type:
+            return None
+        reg = self.dev_type.get_register_by_name(name)
+        if not reg:
+            return None
+        return DeviceRegister(self, reg)
 
     ##########################################################################
     #

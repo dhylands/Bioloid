@@ -442,11 +442,15 @@ class RegisterOnOff(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        val = val.lower()
-        if val == "on" or val == "1":
-            return 1
-        if val == "off" or val == "0":
-            return 0
+        if isinstance(val, str):
+            val = val.lower()
+            if val == "on" or val == "1":
+                return 1
+            if val == "off" or val == "0":
+                return 0
+        else:
+            if val == 0 or val == 1:
+                return val
         raise ValueError("Invalid OnOff value '%s'" % val)
 
     def raw_to_str(self, raw_val):
