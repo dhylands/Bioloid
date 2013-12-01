@@ -100,6 +100,10 @@ class CommandLineOutput(object):
         self.log.info(msg, *args, **kwargs)
 
     def good(self, msg, *args, **kwargs):
+        """Logs a GOOD level string, which the color formatter prints as
+        a green color..
+
+        """
         self.log.log(GOOD, msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):

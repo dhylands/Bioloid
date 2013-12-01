@@ -71,7 +71,6 @@ class ColoredFormatter(logging.Formatter):
         logging.Formatter.__init__(self, *args, **kwargs)
         self.use_color = use_color
 
-
     def format(self, record):
         """Add support for %(color)s and %(nocolor)s where the color is
         determined by the logging level.

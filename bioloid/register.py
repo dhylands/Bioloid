@@ -475,7 +475,7 @@ class RegisterAngularVelocity(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return float((raw_val * 114.0) / 1023.0 )
+        return float((raw_val * 114.0) / 1023.0)
 
     def val_to_raw(self, val):
         """Converts a value into a raw_value.
