@@ -93,11 +93,11 @@ def main():
         log.error("Unable to retrieve register 'led'")
         sys.exit(1)
     goal_position = dev.get_dev_reg("goal-position")
-    if not led:
+    if not goal_position:
         log.error("Unable to retrieve register 'goal-position'")
         sys.exit(1)
     moving_speed = dev.get_dev_reg("moving-speed")
-    if not led:
+    if not moving_speed:
         log.error("Unable to retrieve register 'moving-speed'")
         sys.exit(1)
 
