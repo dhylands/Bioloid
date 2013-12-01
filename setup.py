@@ -9,7 +9,7 @@ setup(
     scripts=[],
     url='http://pypi.python.org/pypi/Bioloid/',
     license='LICENSE',
-    description='Provides access to boiloid devices.',
+    description='Provides access to bioloid devices.',
     long_description=open('README.md').read(),
     install_requires=[
         'pyyaml',
