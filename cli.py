@@ -129,5 +129,10 @@ def main():
     else:
         cmd_line = CommandLine(bus, dev_types)
         cmd_line.auto_cmdloop(' '.join(args.cmd))
+    if args.test:
+        log.info("--------------------------")
+        log.info("Passed: %d Failed: %d",
+                 bus.get_pass_count(), bus.get_fail_count())
+
 
 main()

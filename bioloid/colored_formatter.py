@@ -41,6 +41,7 @@ NO_COLOR = "\x1b[0m"
 COLORS = {
     'WARNING': LT_YELLOW,
     'INFO': "",
+    'Level 21': DK_GREEN,
     'DEBUG': LT_BLUE,
     'CRITICAL': LT_RED,
     'ERROR': LT_RED
@@ -51,6 +52,7 @@ COLORS = {
 LEVELCHAR = {
     'WARNING': 'W',
     'INFO': 'I',
+    'Level 21': 'G',
     'DEBUG': 'D',
     'CRITICAL': 'C',
     'ERROR': 'E'
@@ -68,6 +70,7 @@ class ColoredFormatter(logging.Formatter):
         #    kwargs['stream'] = kwargs.pop("strm")
         logging.Formatter.__init__(self, *args, **kwargs)
         self.use_color = use_color
+
 
     def format(self, record):
         """Add support for %(color)s and %(nocolor)s where the color is

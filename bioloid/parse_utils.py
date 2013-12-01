@@ -26,12 +26,12 @@ def parse_float(string, label=None):
 
     """
     try:
-        val = int(string, 0)
+        val = float(string)
     except ValueError:
         if label:
-            raise ValueError("Expecting an integer %s. Found '%s'"
+            raise ValueError("Expecting a float %s. Found '%s'"
                              % (label, string))
-        raise ValueError("Expecting an integer. Found '%s'" % string)
+        raise ValueError("Expecting a float. Found '%s'" % string)
     return val
 
 

@@ -93,7 +93,7 @@ class Register(object):
     def parse_raw(self, string):
         """Parses a string to convert it into a raw register value."""
         raw_val = parse_int(string, "value")
-        self.check_range(raw_val)
+        self.check_range(raw_val, string)
         return raw_val
 
     def parse(self, string):
@@ -102,10 +102,10 @@ class Register(object):
 
         """
         raw_val = self.str_to_raw(string)
-        self.check_range(raw_val)
+        self.check_range(raw_val, string)
         return raw_val
 
-    def check_range(self, raw_val):
+    def check_range(self, raw_val, string):
         """Verifies that raw_val is within the range of allowed values
         for the register.
 
@@ -117,7 +117,7 @@ class Register(object):
                 (raw_val < self.reg_min_raw or raw_val > self.reg_max_raw)):
             raise ValueError("%s %s is out of the allowed of range %s to %s"
                              % (self.type(),
-                                self.fmt(raw_val),
+                                string,
                                 self.fmt(self.reg_min_raw),
                                 self.fmt(self.reg_max_raw)))
 
@@ -179,7 +179,9 @@ class RegisterBaudRate(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return int((2000000 / val) - 1)
+        if val:
+            return int((2000000 / val) - 1)
+        raise ValueError("Expecting non-zero baudrate")
 
     def raw_to_str(self, raw_val):
         """Converts a raw value into a formatted string.
@@ -243,7 +245,7 @@ class RegisterAngle(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return int((raw_val * 300 + 511) / 1023)
+        return float((raw_val * 300.0) / 1023.0)
 
     def val_to_raw(self, val):
         """Converts a value into a raw_value.
@@ -251,7 +253,7 @@ class RegisterAngle(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return int((val * 0x3ff) / 300)
+        return int(((val / 300.0) * 1023.0) + 0.5)
 
     def raw_to_str(self, raw_val):
         """Converts a raw value into a formatted string.
@@ -259,7 +261,7 @@ class RegisterAngle(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return "%d deg" % self.raw_to_val(raw_val)
+        return "%.1f deg" % self.raw_to_val(raw_val)
 
     def str_to_raw(self, string):
         """Converts a string into a raw value.
@@ -267,7 +269,7 @@ class RegisterAngle(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return self.val_to_raw(parse_int(string, "angle"))
+        return self.val_to_raw(parse_float(string, "angle"))
 
 
 class RegisterTemperature(Register):
@@ -473,7 +475,7 @@ class RegisterAngularVelocity(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return float(((raw_val * 114) + 511) / 1023)
+        return float((raw_val * 114.0) / 1023.0 )
 
     def val_to_raw(self, val):
         """Converts a value into a raw_value.
@@ -489,7 +491,7 @@ class RegisterAngularVelocity(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return "%.1f deg" % self.raw_to_val(raw_val)
+        return "%.1f RPM" % self.raw_to_val(raw_val)
 
     def str_to_raw(self, string):
         """Converts a string into a raw value.
@@ -533,7 +535,7 @@ class RegisterLoad(Register):
         val = int(raw_val)
         if val & 0x400:
             return "CW %d" % (val & 0x3ff)
-        return "CCW %d" % ((val & 0x3ff) - 1)
+        return "CCW %d" % (val & 0x3ff)
 
     def str_to_raw(self, string):
         """Converts a string into a raw value.

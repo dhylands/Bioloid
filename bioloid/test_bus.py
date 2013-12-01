@@ -62,6 +62,30 @@ class TestBus(Bus):
         self.pkt_queue = []
         self.pkt_data = []
         self.log = log or logging.getLogger(__name__)
+        self.test_pass_count = 0
+        self.test_fail_count = 0
+
+    def get_pass_count(self):
+        """Returns the number of tests that passed."""
+        return self.test_pass_count
+
+    def get_fail_count(self):
+        """Returns the number of tests that failed."""
+        return self.test_fail_count
+
+    def test_passed(self):
+        """Marks a test as passed and resets the queue."""
+        self.log.good('=== PASS ===')
+        self.test_pass_count += 1
+        self.pkt_queue = []
+        self.pkt_data = []
+
+    def test_failed(self):
+        """Marks a test as failed and resets the queue."""
+        self.log.error('=== FAIL ===')
+        self.test_fail_count += 1
+        self.pkt_queue = []
+        self.pkt_data = []
 
     def queue(self, packet):
         """Adds a packet to the end of the queue."""

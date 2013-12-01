@@ -16,6 +16,8 @@ from bioloid.parse_utils import parse_int, parse_byte_array
 from bioloid.test_bus import TestError, TestPacket, TestBus
 from bioloid.bus import BusError
 
+GOOD = logging.INFO + 1
+
 
 def trim(docstring):
     """Trims the leading spaces from docstring comments.
@@ -96,6 +98,9 @@ class CommandLineOutput(object):
         if self.captured_output is not None:
             self.captured_output.append(('info', msg % args))
         self.log.info(msg, *args, **kwargs)
+
+    def good(self, msg, *args, **kwargs):
+        self.log.log(GOOD, msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         """Captures and logs an error level message."""
@@ -286,13 +291,10 @@ class CommandLineBase(Cmd):
         try:
             return Cmd.onecmd(self, line)
         except ValueError as err:
-            self.log.error("ValueError")
             return self.handle_exception(err)
         except TestError as err:
-            self.log.error("TestError")
             return self.handle_exception(err)
         except BusError as err:
-            self.log.error("BusError")
             return self.handle_exception(err)
 
     def cmdloop(self, *args, **kwargs):
@@ -935,10 +937,14 @@ class TestCommandLine(CommandLineBase):
         words = shlex.split(line)
         cmd_line = CommandLine(self.bus, self.dev_types, capture_output=True)
         cmd_line.auto_cmdloop('  '.join(words[1:]))
+        CommandLineBase.quitting = False
         test_output = CommandLineBase.output.get_captured_output()
         if len(test_output) != 1 or test_output[0][1] != words[0]:
-            raise TestError("Test Failed. Expected '%s' got '%s'" %
-                            (words[0], test_output[0][1]))
+            self.log.error("Test Failed. Expected '%s' got '%s'",
+                           words[0], test_output[0][1])
+            self.bus.test_failed()
+        else:
+            self.bus.test_passed()
 
     def do_error(self, line):
         """bioloid> test error <command>
@@ -948,8 +954,12 @@ class TestCommandLine(CommandLineBase):
         """
         cmd_line = CommandLine(self.bus, self.dev_types, capture_output=True)
         cmd_line.auto_cmdloop(line)
+        CommandLineBase.quitting = False
         if CommandLineBase.output.get_error_count() == 0:
-            raise TestError("Test Failed. Expected error.")
+            self.log.error("Test Failed. Expected error.")
+            self.bus.test_failed()
+        else:
+            self.bus.test_passed()
 
     def do_success(self, line):
         """bioloid> test success <command>
@@ -959,5 +969,9 @@ class TestCommandLine(CommandLineBase):
         """
         cmd_line = CommandLine(self.bus, self.dev_types, capture_output=True)
         cmd_line.auto_cmdloop(line)
+        CommandLineBase.quitting = False
         if CommandLineBase.output.get_error_count() > 0:
-            raise TestError("Test Failed. Encountered error.")
+            self.log.error("Test Failed. Encountered error.")
+            self.bus.test_failed()
+        else:
+            self.bus.test_passed()
