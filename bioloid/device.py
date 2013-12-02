@@ -11,7 +11,7 @@ from bioloid import bus
 
 class DeviceRegister(object):
     """Links a register and device."""
-    
+
     def __init__(self, dev, reg):
         self.dev = dev
         self.reg = reg
@@ -57,6 +57,10 @@ class Device(object):
         return self.dev_id
 
     def get_dev_reg(self, name):
+        """Returns a device register linking the named register and
+        ths device.
+
+        """
         if not self.dev_type:
             return None
         reg = self.dev_type.get_register_by_name(name)

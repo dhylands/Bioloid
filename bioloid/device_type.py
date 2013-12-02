@@ -103,6 +103,40 @@ class DeviceType(object):
                     return reg
         return None
 
+    def get_register_set_by_name(self, name, num_regs):
+        """Returns an array of registers, verifying that they form a
+        contigous set of registers.
+
+        Raises KeyError if name isn't found in the registers.
+        Raises ValueError if the registers aren't contiguous.
+
+        """
+        regs = self.get_registers_ordered_by_offset()
+        reg_idx = -1
+        for idx in range(len(regs)):
+            if regs[idx].name() == name:
+                reg_idx = idx
+                break
+        if reg_idx < 0:
+            raise KeyError("Register '%s' not found in device type '%s'" %
+                           (name, self.name()))
+        if reg_idx + num_regs >= len(regs):
+            raise ValueError("idx %d + num_regs %d exceeds %d" %
+                             (reg_idx, num_regs, len(regs)))
+        prev_offset = regs[reg_idx].offset()
+        prev_size = regs[reg_idx].size()
+        result = [regs[reg_idx]]
+        for idx in range(reg_idx + 1, reg_idx + num_regs):
+            curr_offset = regs[idx].offset()
+            curr_size = regs[idx].size()
+            if curr_offset != (prev_offset + prev_size):
+                raise ValueError("Register '%s' not contiguou with '%s'" %
+                                 (regs[idx].name(), regs[idx - 1].name()))
+            result.append(regs[idx])
+            prev_offset = curr_offset
+            prev_size = curr_size
+        return result
+
     def get_offset_by_name(self, name):
         """Returns the offset (within the control table) of the named
         register.

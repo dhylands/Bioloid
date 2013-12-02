@@ -569,6 +569,42 @@ class DevTypeCommandLine(CommandLineBase):
         """
         self.dev_type.dump_regs_raw()
 
+    def do_sync_write(self, line):
+        """bioloid> dev-type sync_write <num-ids> <id1> ... <reg-name> \
+<num-regs> <val1> ...
+
+        Sends a synchronous write command, which write multiple register
+        values to multiple devices simultaneously.
+
+        bioloid> servo sync_write 2 1 2 goal-position 2 45 5 90 10
+
+        writes to 2 id's (1 and 2), and writes 2 registers (goal-position)
+        and the moving-speed.
+
+        """
+        args = line.split()
+        try:
+            num_ids = parse_int(args.pop(0))
+            dev_ids = []
+            for _ in range(num_ids):
+                dev_ids.append(parse_int(args.pop(0)))
+            reg_name = args.pop(0)
+            num_regs = parse_int(args.pop(0))
+            reg_set = self.dev_type.get_register_set_by_name(reg_name,
+                                                             num_regs)
+            values = []
+            for idx in range(num_ids):
+                values.append([])
+                for reg_idx in range(num_regs):
+                    val_str = args.pop(0)
+                    reg = reg_set[reg_idx]
+                    raw_val = reg.str_to_raw(val_str)
+                    val = reg.raw_to_val(raw_val)
+                    values[idx].append(val)
+        except IndexError:
+            raise ValueError("Not enough arguments")
+        self.bus.sync_write(dev_ids, reg_set, values)
+
 
 class DevTypeIdCommandLine(CommandLineBase):
     """Processes subcommands for device types followed by an id.

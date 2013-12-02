@@ -109,6 +109,41 @@ class Bus(object):
                     dev_missing(self, dev)
         return some_dev_found
 
+    def sync_write(self, dev_ids, reg_set, values):
+        """Sets up a synchroous write command.
+
+        dev_ids should be an array of device ids.
+        regs should be a register set (obtained from
+        DeviceType.get_register_set_by_name())
+        values should be a 2 dimensional array. The first dimension
+        corresponds to the ids, and the second dimension corresponds to the
+        registers.
+
+        raises ValueError if the dimensionality of values is incorrect.
+
+        """
+        num_ids = len(dev_ids)
+        num_regs = len(reg_set)
+        if num_ids != len(values):
+            raise ValueError("len(dev_ids) = %d must match len(values) = %d" %
+                             (num_ids, len(values)))
+        bytes_per_id = sum([reg.size() for reg in reg_set])
+        param_len = num_ids * (bytes_per_id + 1) + 2
+        self.log.debug("Sending SYNC_WRITE")
+        self.send_cmd_header(packet.Id.BROADCAST, param_len,
+                             packet.Command.SYNC_WRITE)
+        self.send_byte(reg_set[0].offset())
+        self.send_byte(bytes_per_id)
+        for id_idx in range(num_ids):
+            self.send_byte(dev_ids[id_idx])
+            for reg_idx in range(num_regs):
+                reg = reg_set[reg_idx]
+                raw_val = reg.val_to_raw(values[id_idx][reg_idx])
+                self.send_byte(raw_val & 0xff)
+                if reg.size() > 1:
+                    self.send_byte((raw_val >> 8) & 0xff)
+        self.send_checksum()
+
     def send_action(self):
         """Broadcasts an action packet to all of the devices on the bus.
         This causes all of the devices to perform their deferred writes

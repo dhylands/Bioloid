@@ -253,7 +253,8 @@ class RegisterAngle(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return int(((val / 300.0) * 1023.0) + 0.5)
+        print "val = %1.f" % val
+        return int((val * 1023.0) / 300.0)
 
     def raw_to_str(self, raw_val):
         """Converts a raw value into a formatted string.
@@ -487,7 +488,7 @@ class RegisterAngularVelocity(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        return int(((val / 114.0) * 1023.0) + 0.5)
+        return int((val / 114.0) * 1023.0)
 
     def raw_to_str(self, raw_val):
         """Converts a raw value into a formatted string.
