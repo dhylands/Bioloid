@@ -253,7 +253,6 @@ class RegisterAngle(Register):
         Raises a ValueError exception if an error occurs.
 
         """
-        print "val = %1.f" % val
         return int((val * 1023.0) / 300.0)
 
     def raw_to_str(self, raw_val):
