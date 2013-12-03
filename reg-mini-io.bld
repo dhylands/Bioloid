@@ -1,0 +1,35 @@
+# Comment for whole line
+DeviceType: mini-io 
+Model: 17420 # Comment at end
+
+Register: 0x00  model                   2 ro
+Register: 0x02  version                 1 ro
+Register: 0x03  id                      1 rw  0  253
+Register: 0x04  baud-rate               1 rw  0  254 BaudRate
+Register: 0x05  return-delay-time       1 rw  0  254 RDT
+Register: 0x06  control_digital_0       1 rw  0    1
+Register: 0x07  control_digital_1       1 rw  0    1
+Register: 0x08  control_digital_2       1 rw  0    1
+Register: 0x09  control_digital_3       1 rw  0    1
+Register: 0x0A  control_digital_4       1 rw  0    1
+Register: 0x0B  control_digital_5       1 rw  0    1
+Register: 0x0C  control_digital_6       1 rw  0    1
+Register: 0x0D  control_digital_7       1 rw  0    1
+Register: 0x10  status-level            1 rw  0    2 StatusRet
+Register: 0x19  led                     1 rw  0    1 OnOff
+Register: 0x1A  control_adc_0           2 ro  0 1023
+Register: 0x1C  control_adc_1           2 ro  0 1023
+Register: 0x1E  control_adc_2           2 ro  0 1023
+Register: 0x20  control_adc_3           2 ro  0 1023
+Register: 0x22  control_adc_4           2 ro  0 1023
+Register: 0x24  control_adc_5           2 ro  0 1023
+Register: 0x26  control_digital_0       1 rw  0    1 OnOff
+Register: 0x27  control_digital_1       1 rw  0    1 OnOff
+Register: 0x28  control_digital_2       1 rw  0    1 OnOff
+Register: 0x29  control_digital_3       1 rw  0    1 OnOff
+Register: 0x2A  control_digital_4       1 rw  0    1 OnOff
+Register: 0x2B  control_digital_5       1 rw  0    1 OnOff
+Register: 0x2C  control_digital_6       1 rw  0    1 OnOff
+Register: 0x2D  control_digital_7       1 rw  0    1 OnOff
+EndDeviceType
+
