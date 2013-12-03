@@ -50,7 +50,7 @@ test rsp 1 none
 test success mini-io 1 set led on
 test cmd 1 write 6 0
 test rsp 1 none
-test success mini-io 1 set control_digital_dir_0 off
+test success mini-io 1 set control_digital_dir_0 input
 test error mini-io 1 set-raw control_digital_dir_0 2
 test cmd 1 read 6 1
 test rsp 1 none 0
