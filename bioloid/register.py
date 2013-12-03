@@ -470,6 +470,51 @@ class RegisterOnOff(Register):
         return self.val_to_raw(string)
 
 
+class RegisterDirection(Register):
+    """Implements the OnOff register type."""
+
+    def raw_to_val(self, raw_val):
+        """Converts a raw value into its Direction representation.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        return "output" if raw_val else "input"
+
+    def val_to_raw(self, val):
+        """Converts a value into a raw_value.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        if isinstance(val, str):
+            val = val.lower()
+            if val == "output" or val == "1":
+                return 1
+            if val == "input" or val == "0":
+                return 0
+        else:
+            if val == 0 or val == 1:
+                return val
+        raise ValueError("Invalid Register value '%s'" % val)
+
+    def raw_to_str(self, raw_val):
+        """Converts a raw value into a formatted string.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        return self.raw_to_val(raw_val)
+
+    def str_to_raw(self, string):
+        """Converts a string into a raw value.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        return self.val_to_raw(string)
+
+
 class RegisterAngularVelocity(Register):
     """Implements the AngularVelocity (RPM) register type."""
 

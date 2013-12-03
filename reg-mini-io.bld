@@ -7,14 +7,14 @@ Register: 0x02  version                 1 ro
 Register: 0x03  id                      1 rw  0  253
 Register: 0x04  baud-rate               1 rw  0  254 BaudRate
 Register: 0x05  return-delay-time       1 rw  0  254 RDT
-Register: 0x06  control_digital_0       1 rw  0    1
-Register: 0x07  control_digital_1       1 rw  0    1
-Register: 0x08  control_digital_2       1 rw  0    1
-Register: 0x09  control_digital_3       1 rw  0    1
-Register: 0x0A  control_digital_4       1 rw  0    1
-Register: 0x0B  control_digital_5       1 rw  0    1
-Register: 0x0C  control_digital_6       1 rw  0    1
-Register: 0x0D  control_digital_7       1 rw  0    1
+Register: 0x06  control_digital_dir_0   1 rw  0    1 Direction
+Register: 0x07  control_digital_dir_1   1 rw  0    1 Direction
+Register: 0x08  control_digital_dir_2   1 rw  0    1 Direction
+Register: 0x09  control_digital_dir_3   1 rw  0    1 Direction
+Register: 0x0A  control_digital_dir_4   1 rw  0    1 Direction
+Register: 0x0B  control_digital_dir_5   1 rw  0    1 Direction
+Register: 0x0C  control_digital_dir_6   1 rw  0    1 Direction
+Register: 0x0D  control_digital_dir_7   1 rw  0    1 Direction
 Register: 0x10  status-level            1 rw  0    2 StatusRet
 Register: 0x19  led                     1 rw  0    1 OnOff
 Register: 0x1A  control_adc_0           2 ro  0 1023

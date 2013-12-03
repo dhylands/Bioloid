@@ -43,6 +43,22 @@ test cmd 1 read 19 1
 test rsp 1 none 1
 test output "on" servo 1 get led
 
+echo Testing RegisterDirection
+test error mini-io 1 set control_digital_dir_0 foo
+test cmd 1 write 19 1
+test rsp 1 none
+test success mini-io 1 set led on
+test cmd 1 write 6 0
+test rsp 1 none
+test success mini-io 1 set control_digital_dir_0 off
+test error mini-io 1 set-raw control_digital_dir_0 2
+test cmd 1 read 6 1
+test rsp 1 none 0
+test output "input" mini-io 1 get control_digital_dir_0
+test cmd 1 read 6 1
+test rsp 1 none 1
+test output "output" mini-io 1 get control_digital_dir_0
+
 echo Testing RegisterBaudRate
 test error servo 1 set baud-rate foo
 test error servo 1 set baud-rate 0
