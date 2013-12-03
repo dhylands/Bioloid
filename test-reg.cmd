@@ -246,7 +246,7 @@ test success servo 1 set moving-speed 113.9
 test cmd 1 write 20 ff 03
 test rsp 1 none
 test success servo 1 set moving-speed 114
-test error servo 1 set moving-speed 114.1
+test error servo 1 set moving-speed 114.2
 test cmd 1 read 20 2
 test rsp 1 none 0 0
 test output "0.0 RPM" servo 1 get moving-speed
