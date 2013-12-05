@@ -59,6 +59,7 @@ class CommandLineOutput(object):
     def __init__(self, log=None):
         self.captured_output = None
         self.error_count = 0
+        self.fatal_count = 0
         self.buffered_output = ""
         self.log = log or logging.getLogger(__name__)
 
@@ -78,10 +79,17 @@ class CommandLineOutput(object):
 
     def get_error_count(self):
         """Returns the number of errors which have been recorded in the
-        currently capttured output.
+        currently captured output.
 
         """
         return self.error_count
+
+    def get_fatal_count(self):
+        """Returns the number of fatal errors which have been recorded in the
+        currently captured output.
+
+        """
+        return self.fatal_count
 
     def flush(self):
         """Used by Cmd just after printing the prompt."""
@@ -113,6 +121,13 @@ class CommandLineOutput(object):
         self.error_count += 1
         self.log.error(msg, *args, **kwargs)
 
+    def fatal(self, msg, *args, **kwargs):
+        """Captures and logs an fatal level message."""
+        if self.captured_output is not None:
+            self.captured_output.append(('fatal', msg % args))
+        self.fatal_count += 1
+        self.log.fatal(msg, *args, **kwargs)
+
     def write(self, string):
         """Characters to output. Lines will be delimited by newline
         characters.
@@ -141,6 +156,7 @@ class CommandLineOutput(object):
         sys.stdout.flush()
         self.captured_output = []
         self.error_count = 0
+        self.fatal_count = 0
 
 
 class CommandLineBase(Cmd):
@@ -261,16 +277,17 @@ class CommandLineBase(Cmd):
         if CommandLineBase.quitting:
             return True
 
-    def handle_exception(self, err):
+    def handle_exception(self, err, log=None):
         """Common code for handling an exception."""
+        if not log:
+            log = self.log.error
         base = CommandLineBase.cmd_stack[0]
         if base.filename is not None:
-            self.log.error("File: %s Line: %d Error: %s",
-                           base.filename,
-                           base.line_num, err)
+            log("File: %s Line: %d Error: %s",
+                base.filename, base.line_num, err)
             CommandLineBase.quitting = True
             return True
-        self.log.error("Error: %s", err)
+        log("Error: %s", err)
 
     def onecmd(self, line):
         """Override onecmd.
@@ -297,7 +314,7 @@ class CommandLineBase(Cmd):
         except ValueError as err:
             return self.handle_exception(err)
         except TestError as err:
-            return self.handle_exception(err)
+            return self.handle_exception(err, log=self.log.fatal)
         except BusError as err:
             return self.handle_exception(err)
 
@@ -979,7 +996,10 @@ class TestCommandLine(CommandLineBase):
         cmd_line.auto_cmdloop('  '.join(words[1:]))
         CommandLineBase.quitting = False
         test_output = CommandLineBase.output.get_captured_output()
-        if len(test_output) != 1 or test_output[0][1] != words[0]:
+        if CommandLineBase.output.get_fatal_count() > 0:
+            self.log.fatal("Unexpected fatal error encountered.")
+            self.bus.test_failed()
+        elif len(test_output) != 1 or test_output[0][1] != words[0]:
             self.log.error("Test Failed. Expected '%s' got '%s'",
                            words[0], test_output[0][1])
             self.bus.test_failed()
@@ -995,8 +1015,11 @@ class TestCommandLine(CommandLineBase):
         cmd_line = CommandLine(self.bus, self.dev_types, capture_output=True)
         cmd_line.auto_cmdloop(line)
         CommandLineBase.quitting = False
-        if CommandLineBase.output.get_error_count() == 0:
-            self.log.error("Test Failed. Expected error.")
+        if CommandLineBase.output.get_fatal_count() > 0:
+            self.log.fatal("Unexpected fatal error encountered.")
+            self.bus.test_failed()
+        elif CommandLineBase.output.get_error_count() == 0:
+            self.log.error("Test Failed. Expected an error, but none found.")
             self.bus.test_failed()
         else:
             self.bus.test_passed()
@@ -1010,8 +1033,11 @@ class TestCommandLine(CommandLineBase):
         cmd_line = CommandLine(self.bus, self.dev_types, capture_output=True)
         cmd_line.auto_cmdloop(line)
         CommandLineBase.quitting = False
-        if CommandLineBase.output.get_error_count() > 0:
-            self.log.error("Test Failed. Encountered error.")
+        if CommandLineBase.output.get_fatal_count() > 0:
+            self.log.fatal("Unexpected fatal error encountered.")
+            self.bus.test_failed()
+        elif CommandLineBase.output.get_error_count() > 0:
+            self.log.error("Test Failed. Unexpected error encountered.")
             self.bus.test_failed()
         else:
             self.bus.test_passed()

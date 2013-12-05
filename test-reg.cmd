@@ -63,7 +63,7 @@ echo Testing RegisterBaudRate
 test error servo 1 set baud-rate foo
 test error servo 1 set baud-rate 0
 test error servo 1 set baud-rate 1
-test error servo 1 set baud-rate 7842
+test error servo 1 set baud-rate 7812
 test cmd 1 write 04 fe
 test rsp 1 none
 test success servo 1 set baud-rate 7843
@@ -86,7 +86,7 @@ test success servo 1 set goal-position 0.3
 test cmd 1 write 1e ff 3
 test rsp 1 none
 test success servo 1 set goal-position 300
-test error servo 1 set goal-position 300.2
+test error servo 1 set goal-position 300.3
 test cmd 1 read 1e 2
 test rsp 1 none 0 0
 test output "0.0 deg" servo 1 get goal-position

@@ -368,7 +368,7 @@ class RegisterStatusRet(Register):
         val = val.lower()
         if val in RegisterStatusRet.lookup:
             return RegisterStatusRet.lookup.index(val)
-        return 2
+        raise ValueError("Unrecognized StatusRet: '%s'" % val)
 
     def raw_to_str(self, raw_val):
         """Converts a raw value into a formatted string.
