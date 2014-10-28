@@ -13,6 +13,7 @@ http://www.huvrobotics.com/shop/index.php?_a=viewProd&productId=5
 
 To install on a BeagleBone Black:
 
+```bash
 wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py
 wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py
 
@@ -32,6 +33,7 @@ pip install -e .
 export BIOLOID_PORT=/dev/ttyUSB0
 ./cli.py
 help
+```
 
 scan will show detected devices
 servo 1 set led on
