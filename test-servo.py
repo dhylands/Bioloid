@@ -88,22 +88,14 @@ def main():
         log.error("Unable to find device type 'servo'")
         sys.exit(1)
     dev = Device(bus, args.dev_id, servo_type)
-    led = dev.get_dev_reg("led")
-    if not led:
-        log.error("Unable to retrieve register 'led'")
-        sys.exit(1)
-    goal_position = dev.get_dev_reg("goal-position")
-    if not goal_position:
-        log.error("Unable to retrieve register 'goal-position'")
-        sys.exit(1)
-    moving_speed = dev.get_dev_reg("moving-speed")
-    if not moving_speed:
-        log.error("Unable to retrieve register 'moving-speed'")
-        sys.exit(1)
-
     if not dev.ping():
         log.error("Device %d doesn't seem to be responding", args.dev_id)
         sys.exit(1)
+
+    led = dev.get_dev_reg("led")
+    goal_position = dev.get_dev_reg("goal-position")
+    moving_speed = dev.get_dev_reg("moving-speed")
+
     moving_speed.set(20)
     log.info("Speed = %.1f", moving_speed.get())
 

@@ -590,7 +590,7 @@ class DevTypeCommandLine(CommandLineBase):
         """bioloid> dev-type sync_write <num-ids> <id1> ... <reg-name> \
 <num-regs> <val1> ...
 
-        Sends a synchronous write command, which write multiple register
+        Sends a synchronous write command, which writes multiple register
         values to multiple devices simultaneously.
 
         bioloid> servo sync_write 2 1 2 goal-position 2 45 5 90 10
@@ -652,7 +652,9 @@ class DevTypeIdCommandLine(CommandLineBase):
         Sends a PING command to the indicated device.
 
         """
-        if not self.dev.ping():
+        if self.dev.ping():
+            self.log.info("device %d status normal", self.dev.get_dev_id())
+        else:
             self.log.error("device %d not responding", self.dev.get_dev_id())
 
     def get_reg(self, reg_name, raw):
@@ -672,7 +674,10 @@ class DevTypeIdCommandLine(CommandLineBase):
                 self.log.error("Register '%s' not defined.", reg_name)
                 return
             val = self.dev.read_reg(reg)
-            self.log.info(reg.fmt(val))
+            if raw:
+                self.log.info(reg.fmt_raw(val))
+            else:
+                self.log.info(reg.fmt(val))
             return
         lines = [['Addr', 'Size', 'Value', 'Type', 'Name'], '-']
         for reg in self.dev_type.get_registers_ordered_by_offset():
@@ -773,6 +778,9 @@ class DevTypeIdCommandLine(CommandLineBase):
         Sets the value of a register using the natural units of the
         register type (degrees, volts, etc).
 
+        The write of the data will be deferred until an ACTION command is
+        received.
+
         """
         self.set_reg(line, raw=False, deferred=True)
 
@@ -789,6 +797,8 @@ class DevTypeIdCommandLine(CommandLineBase):
 
         Issues the READ_DATA command to the inidcated device. The data
         which is read is formatted as hex bytes.
+
+        Note that multi-byte data is little-endian.
 
         > servo 15 read-data 0x1e 4
         Read: 001e: AA 02 00 00
@@ -824,6 +834,8 @@ class DevTypeIdCommandLine(CommandLineBase):
         is parsed as individual bytes, and may be in decimal, octal (if
         prefixed with a 0), or hexadecimal (if prefixed with a 0x).
 
+        Note that multi-byte data is little-endian.
+
         """
         offset, data = self.parse_offset_and_data(line)
         self.dev.write(offset, data)
@@ -831,7 +843,9 @@ class DevTypeIdCommandLine(CommandLineBase):
     def do_wd(self, line):
         """bioloid> device-type id wd offset-or-register-name data ...
 
-        Alias for write-data."""
+        Alias for write-data.
+
+        """
         return self.do_write_data(line)
 
     def do_deferred_write(self, line):
@@ -840,6 +854,9 @@ class DevTypeIdCommandLine(CommandLineBase):
         Issues the REG_WRITE command to the indicated device. The data
         is parsed as individual bytes, and may be in decimal, octal (if
         prefixed with a 0), or hexadecimal (if prefixed with a 0x).
+
+        The write of the data will be deferred until an ACTION command is
+        received.
 
         """
         offset, data = self.parse_offset_and_data(line)

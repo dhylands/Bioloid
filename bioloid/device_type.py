@@ -158,8 +158,8 @@ class DeviceType(object):
         for reg in regs:
             lines.append(["0x%02x" % reg.offset(),
                           "%s %d" % (reg.access(), reg.size()),
-                          reg.fmtRaw(reg.min_raw()),
-                          reg.fmtRaw(reg.max_raw()),
+                          reg.fmt_raw(reg.min_raw()),
+                          reg.fmt_raw(reg.max_raw()),
                           reg.type(),
                           reg.name()])
         column_print("<<>>< ", lines, print_func=self._log.info)
