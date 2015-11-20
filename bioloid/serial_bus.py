@@ -12,10 +12,11 @@ class SerialPort(serial.Serial):
 
     def __init__(self, *args, **kwargs):
         # Ensure that a reasonable timeout is set
-        timeout = kwargs.get('timeout', 0.05)
+        timeout = kwargs.get('timeout', 0.1)
         if timeout < 0.05:
             timeout = 0.05
         kwargs['timeout'] = timeout
+        print "Using timeout of ", timeout
         kwargs['bytesize'] = serial.EIGHTBITS
         kwargs['parity'] = serial.PARITY_NONE
         kwargs['stopbits'] = serial.STOPBITS_ONE

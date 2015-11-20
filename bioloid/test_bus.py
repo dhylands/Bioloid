@@ -41,6 +41,12 @@ class TestPacket(object):
         """Returns the packet data associatedd with this packet."""
         return self.pkt_data
 
+    def packet_size(self):
+        """Returns the size of the packet in bytes. In this context size
+           means the number of bytes which will be written on the wire.
+        """
+        return len(self.pkt_data)
+
     def compare_data(self, cmp_data):
         """Compares the packet data with the indicated data."""
         if len(cmp_data) != len(self.pkt_data):
@@ -64,6 +70,13 @@ class TestBus(Bus):
         self.log = log or logging.getLogger(__name__)
         self.test_pass_count = 0
         self.test_fail_count = 0
+
+        self.packets_read_count = 0
+        self.packets_written_count = 0
+        self.packet_bytes_read = 0
+        self.packet_bytes_written = 0
+        self.max_packet_size_read = 0;
+        self.max_packet_size_written = 0;
 
     def get_pass_count(self):
         """Returns the number of tests that passed."""
@@ -98,6 +111,9 @@ class TestBus(Bus):
         """
         try:
             packet = Bus.read_status_packet(self)
+            self.packets_read_count += 1
+            self.packet_bytes_read += packet.packet_size()
+            self.max_packet_size_read = max(packet.packet_size(), self.max_packet_size_read)
             return packet
         except BusError as ex:
             err = ex.get_error_code()
@@ -128,6 +144,9 @@ class TestBus(Bus):
             raise TestError("Unexpected packet type '%d'" % pkt.packet_type())
         for byte in pkt.packet_data():
             self.pkt_data += byte
+        self.packets_read_count += 1
+        self.packet_bytes_read += pkt.packet_size()
+        self.max_packet_size_read = max(pkt.packet_size(), self.max_packet_size_read)
         return ord(self.pkt_data.pop(0))
 
     def write_packet(self, packet_data):
@@ -155,3 +174,6 @@ class TestBus(Bus):
             dump_mem(pkt.packet_data(), prefix="  E", show_ascii=False,
                      print_func=self.log.error)
             raise TestError("write_packet: Unexpected packet written")
+        self.packets_written_count += 1
+        self.packet_bytes_written += pkt.packet_size()
+        self.max_packet_size_written = max(pkt.packet_size(), self.max_packet_size_written)

@@ -175,6 +175,10 @@ class Packet(object):
         """Retuns the command contained within the packet."""
         return self.cmd
 
+    def packet_size(self):
+        """Returns the number of bytes that would be written onto the serial bus."""
+        return self.param_len()
+
     def param_byte(self, idx):
         """Returns the idx'th parameter byte."""
         return ord(self.param[idx])

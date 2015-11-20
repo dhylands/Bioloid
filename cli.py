@@ -70,6 +70,13 @@ def main():
         default=False
     )
     parser.add_argument(
+        "-s", "--stats",
+        dest="stats",
+        action="store_true",
+        help="Print some packet stats (at the end of test run)",
+        default=False
+    )
+    parser.add_argument(
         "-v", "--verbose",
         dest="verbose",
         action="store_true",
@@ -133,6 +140,14 @@ def main():
         log.info("--------------------------")
         log.info("Passed: %d Failed: %d",
                  bus.get_pass_count(), bus.get_fail_count())
+        if args.stats:
+            log.info('')
+            log.info('      Packets read: {}'.format(bus.packets_read_count))
+            log.info('   Packets written: {}'.format(bus.packets_written_count))
+            log.info('        Bytes read: {}'.format(bus.packet_bytes_read))
+            log.info('     Bytes written: {}'.format(bus.packet_bytes_written))
+            log.info('   Max Packet read: {}'.format(bus.max_packet_size_read))
+            log.info('Max Packet written: {}'.format(bus.max_packet_size_written))
 
 
 main()
