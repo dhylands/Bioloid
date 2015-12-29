@@ -12,6 +12,7 @@ import serial
 import logging
 from bioloid.command_line import CommandLine
 from bioloid.serial_bus import SerialPort, SerialBus
+from bioloid.socket_bus import SocketBus
 from bioloid.device_type_parser import DeviceTypeParser
 from bioloid.device_type import DeviceTypes
 from bioloid.log_setup import log_setup
@@ -49,7 +50,8 @@ def main():
     parser.add_argument(
         "-n", "--net",
         dest="net",
-        help="Set the network host (and optionally port) to use"
+        action="store_true",
+        help="Connect to a test_dev_server (localhost:8888)"
     )
     parser.add_argument(
         "-t", "--test",
@@ -110,10 +112,6 @@ def main():
         log.error("Must specify one of network, serial, or test")
         sys.exit(1)
 
-    if args.net:
-        log.error("network option not supported yet")
-        sys.exit(1)
-
     dev_types = DeviceTypes()
     parser = DeviceTypeParser(dev_types)
     parser.parse_dev_type_files(script_dir)
@@ -128,6 +126,12 @@ def main():
             log.error("Unable to open port '%s'", args.port)
             sys.exit(1)
         bus = SerialBus(serial_port, show_packets=args.debug)
+    elif args.net:
+        bus = SocketBus(show_packets=args.debug)
+    else:
+        log.error('No bus specified')
+        sys.exit(1)
+
     if args.filename:
         with open(args.filename) as cmd_file:
             cmd_line = CommandLine(bus, dev_types, stdin=cmd_file,
