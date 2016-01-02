@@ -1,0 +1,49 @@
+DeviceType: io-adapter
+Model: 123
+
+Register: 0x00  model                   2 ro
+Register: 0x02  version                 1 ro
+Register: 0x03  id                      1 rw  0  253
+Register: 0x04  baud-rate               1 rw  0  254 BaudRate
+Register: 0x05  return-delay-time       1 rw  0  254 RDT
+
+Register: 0x10	max-adcs		1 rw  0  254
+Register: 0x11	max-gpios		1 rw  0  254
+
+Register: 0x20	adc-pin-0		1 rw  0  254 Pin
+Register: 0x21	adc-pin-1		1 rw  0  254 Pin
+Register: 0x22	adc-pin-2		1 rw  0  254 Pin
+Register: 0x23	adc-pin-3		1 rw  0  254 Pin
+# There are 12 more ADC pins
+
+Register: 0x30  gpio-pin-0		1 rw  0  254 Pin
+Register: 0x31  gpio-pin-1		1 rw  0  254 Pin
+Register: 0x32  gpio-pin-2		1 rw  0  254 Pin
+Register: 0x33  gpio-pin-3		1 rw  0  254 Pin
+# There are 28 more GPIO pins
+
+Register: 0x50  gpio-cfg-0		1 rw  0  254 GpioCfg
+Register: 0x51  gpio-cfg-1		1 rw  0  254 GpioCfg
+Register: 0x52  gpio-cfg-2		1 rw  0  254 GpioCfg
+Register: 0x53  gpio-cfg-3		1 rw  0  254 GpioCfg
+# There are 28 more GPIO_CFG entries
+
+# End of persistent entries
+
+Register: 0x80	adc-value-0		2 ro  0 4095
+Register: 0x81	adc-value-1		2 ro  0 4095
+Register: 0x82	adc-value-2		2 ro  0 4095
+Register: 0x83	adc-value-3		2 ro  0 4095
+
+Register: 0xb0  gpio-set		4 rw  0 0xffffffff
+Register: 0xb4  gpio-clear		4 rw  0 0xffffffff
+Register: 0xb8  gpio-odr		4 rw  0 0xffffffff
+Register: 0xbc  gpio-idr		4 rw  0 0xffffffff
+
+Register: 0xc0  gpio-value-0		1 rw  0 1
+Register: 0xc1  gpio-value-1		1 rw  0 1
+Register: 0xc2  gpio-value-2		1 rw  0 1
+Register: 0xc3  gpio-value-3		1 rw  0 1
+
+EndDeviceType
+

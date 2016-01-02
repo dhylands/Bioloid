@@ -593,3 +593,105 @@ class RegisterLoad(Register):
 
         """
         raise ValueError("Parsing a load not supported yet.")
+
+
+class RegisterPin(Register):
+    """Implements the Pin register type."""
+
+    def raw_to_val(self, raw_val):
+        """Converts a raw value into its Pin representation.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        port = (raw_val & 0xf0) >> 4
+        pin = raw_val & 0x0f
+        if port == 0:
+            return 'unconfigured'
+        ans = '{:c}{}'.format(0x40 + port, pin)
+        return ans
+
+    def val_to_raw(self, val):
+        """Converts a value into a raw_value.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        if type(val) != str or len(val) != 2:
+            raise ValueError("Expecting a 2 character string")
+        port_str = val.upper()[0]
+        pin = int(val[1])
+        if port_str < 'A' or port_str > 'O':
+            raise ValueError('Expecting port to be from A-O')
+        ans = ((ord(port_str) - ord('A') + 1) << 4) + pin
+        return ans
+
+    def raw_to_str(self, raw_val):
+        """Converts a raw value into a formatted string.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        return self.raw_to_val(raw_val)
+
+    def str_to_raw(self, string):
+        """Converts a string into a raw value.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        return self.val_to_raw(string)
+
+
+class RegisterGpioCfg(Register):
+    """Implements the Pin register type."""
+
+    lookup = ['in', 'pullup', 'pulldown', 'od']
+
+    def raw_to_val(self, raw_val):
+        """Converts a raw value into its GpioCfg representation.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        strs = []
+        if (raw_val & 1) == 0:
+            strs.append('out')
+        for i in range(4):
+            if raw_val & (1 << i):
+                strs.append(RegisterGpioCfg.lookup[i])
+        return ','.join(strs)
+
+    def val_to_raw(self, val):
+        """Converts a value into a raw_value.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        raw_val = 0
+        val = val.lower()
+        for word in val.split(','):
+            if word != 'out':
+                if word in RegisterGpioCfg.lookup:
+                    raw_val |= (1 << RegisterGpioCfg.lookup.index(word))
+                else:
+                    raise ValueError("Unrecognized GpioCfg '{}'".format(word))
+        return raw_val
+
+
+    def raw_to_str(self, raw_val):
+        """Converts a raw value into a formatted string.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        return self.raw_to_val(raw_val)
+
+    def str_to_raw(self, string):
+        """Converts a string into a raw value.
+
+        Raises a ValueError exception if an error occurs.
+
+        """
+        return self.val_to_raw(string)
+

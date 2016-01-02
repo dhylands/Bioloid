@@ -110,8 +110,8 @@ class DeviceTypeParser(object):
         self.reg_offset = parse_int(words.pop(0), "offset")
         self.reg_name = words.pop(0)
         self.reg_size = parse_int(words.pop(0), "size")
-        if self.reg_size < 1 or self.reg_size > 2:
-            raise ValueError("Register '%s' size must be 1 or 2. Found: %s"
+        if self.reg_size != 1 and self.reg_size != 2 and self.reg_size != 4:
+            raise ValueError("Register '%s' size must be 1, 2 or 4. Found: %s"
                              % (self.reg_name, self.reg_size))
         self.reg_access = words.pop(0)
         if self.reg_access != "ro" and self.reg_access != "rw":
