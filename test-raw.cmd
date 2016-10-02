@@ -21,7 +21,6 @@ test rsp-raw ff ff 00 02 00 fd
 test success servo 0 reset
 
 echo Test sync-write
-# We don't currently have a sync-write command
 # Sync Write example - Set multiple positions and velocities
 # Dynamixel actuator with an ID of 0: to position 0x010 with a speed of 0x150
 # Dynamixel actuator with an ID of 1: to position 0x220 with a speed of 0x360
@@ -30,6 +29,10 @@ echo Test sync-write
 
 test cmd-raw ff ff fe 18 83 1e 04 00 10 00 50 01 01 20 02 60 03 02 30 00 70 01 03 20 02 80 03 12
 test success servo sync-write 4 0 1 2 3 goal-position 2 4.7 37.5 159.6 96.3 14.1 41.1 159.6 99.9
+
+echo Test sync-write-raw
+test cmd-raw ff ff fe 18 83 1e 04 00 10 00 50 01 01 20 02 60 03 02 30 00 70 01 03 20 02 80 03 12
+test success servo sync-write-raw 4 0 1 2 3 goal-position 2 0x010 0x150 0x220 0x360 0x030 0x170 0x220 0x380
 
 echo Reading the Model Number and Firmware Version for ID of 1
 # Model 0x74 = 116 which corresponds to a DX-116

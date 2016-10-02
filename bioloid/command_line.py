@@ -586,18 +586,8 @@ class DevTypeCommandLine(CommandLineBase):
         """
         self.dev_type.dump_regs_raw()
 
-    def do_sync_write(self, line):
-        """bioloid> dev-type sync_write <num-ids> <id1> ... <reg-name> \
-<num-regs> <val1> ...
-
-        Sends a synchronous write command, which writes multiple register
-        values to multiple devices simultaneously.
-
-        bioloid> servo sync_write 2 1 2 goal-position 2 45 5 90 10
-
-        writes to 2 id's (1 and 2), and writes 2 registers (goal-position)
-        and the moving-speed.
-
+    def sync_write(self, line, raw):
+        """Does a synchronous write to multiple devices.
         """
         args = line.split()
         try:
@@ -615,13 +605,44 @@ class DevTypeCommandLine(CommandLineBase):
                 for reg_idx in range(num_regs):
                     val_str = args.pop(0)
                     reg = reg_set[reg_idx]
-                    raw_val = reg.str_to_raw(val_str)
-                    val = reg.raw_to_val(raw_val)
+                    if raw:
+                        val = reg.parse_raw(val_str)
+                    else:
+                        val = reg.parse(val_str)
                     values[idx].append(val)
         except IndexError:
             raise ValueError("Not enough arguments")
-        self.bus.sync_write(dev_ids, reg_set, values)
+        self.bus.sync_write(dev_ids, reg_set, values, raw=True)
 
+    def do_sync_write(self, line):
+        """bioloid> dev-type sync_write <num-ids> <id1> ... <reg-name> \
+<num-regs> <val1> ...
+
+        Sends a synchronous write command, which writes multiple register
+        values to multiple devices simultaneously.
+
+        bioloid> servo sync_write 2 1 2 goal-position 2 45 5 90 10
+
+        writes to 2 id's (1 and 2), and writes 2 registers: goal-position
+        and the moving-speed.
+
+        """
+        self.sync_write(line, raw=False)
+
+    def do_sync_write_raw(self, line):
+        """bioloid> dev-type sync_write_raw <num-ids> <id1> ... <reg-name> \
+<num-regs> <val1> ...
+
+        Sends a synchronous write command, which writes multiple register
+        values to multiple devices simultaneously.
+
+        bioloid> servo sync_write 2 1 2 goal-position 2 150 0 250 20
+
+        writes to 2 id's (1 and 2), and writes 2 registers: goal-position
+        and the moving-speed.
+
+        """
+        self.sync_write(line, raw=True)
 
 class DevTypeIdCommandLine(CommandLineBase):
     """Processes subcommands for device types followed by an id.
@@ -681,6 +702,7 @@ class DevTypeIdCommandLine(CommandLineBase):
             return
         lines = [['Addr', 'Size', 'Value', 'Type', 'Name'], '-']
         for reg in self.dev_type.get_registers_ordered_by_offset():
+            #print('Reading reg @ {:#04x}'.format(reg.offset()))
             val = self.dev.read_reg(reg)
             if raw:
                 val_str = reg.fmt_raw(val)

@@ -109,7 +109,7 @@ class Bus(object):
                     dev_missing(self, dev)
         return some_dev_found
 
-    def sync_write(self, dev_ids, reg_set, values):
+    def sync_write(self, dev_ids, reg_set, values, raw=False):
         """Sets up a synchroous write command.
 
         dev_ids should be an array of device ids.
@@ -138,7 +138,10 @@ class Bus(object):
             self.send_byte(dev_ids[id_idx])
             for reg_idx in range(num_regs):
                 reg = reg_set[reg_idx]
-                raw_val = reg.val_to_raw(values[id_idx][reg_idx])
+                if raw:
+                    raw_val = int(values[id_idx][reg_idx])
+                else:
+                    raw_val = reg.val_to_raw(values[id_idx][reg_idx])
                 self.send_byte(raw_val & 0xff)
                 if reg.size() > 1:
                     self.send_byte((raw_val >> 8) & 0xff)
