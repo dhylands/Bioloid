@@ -1,5 +1,6 @@
 """Provides the dump_mem function, which dumps memory in hex/ASCII."""
 
+from __future__ import print_function
 
 def default_print(line):
     """Default print routine to use, if one wasn't provided."""
@@ -53,32 +54,32 @@ if __name__ == "__main__":
     print("Empty Buffer")
     dump_mem("", prefix=PREFIX)
 
-    print
+    print("")
     print("Less than line")
     dump_mem("0123", prefix=PREFIX)
 
-    print
+    print("")
     print("Exactly one line")
     dump_mem("0123456789ABCDEF", prefix=PREFIX)
 
-    print
+    print("")
     print("A bit more than a line")
     dump_mem("0123456789ABCDEFGHI", prefix=PREFIX)
 
-    print
+    print("")
     print("Set a prefix")
     dump_mem("0123", prefix="    Something")
 
-    print
+    print("")
     print("Set an address and a line_width")
     dump_mem("0123456789ABCDEFGHI", address=0x2000, line_width=8,
              prefix=PREFIX)
 
     def my_print_func(line):
         """my_print_func."""
-        print "    print_func:", line
+        print("    print_func:", line)
 
-    print
+    print("")
     print("With a print_func")
     dump_mem("0123", print_func=my_print_func)
 
@@ -86,10 +87,10 @@ if __name__ == "__main__":
     DATA += chr(0)
     DATA += chr(0x80)
     DATA += chr(0xFF)
-    print
+    print("")
     print("Check out some non-printable characters")
     dump_mem(DATA, prefix=PREFIX)
 
-    print
+    print("")
     print("With no prefix")
     dump_mem("0123")
