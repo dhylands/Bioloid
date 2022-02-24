@@ -132,7 +132,7 @@ class TestBus(Bus):
         if len(self.pkt_data) > 0:
             # There is still unread data from a packet previously taken
             # from the queue
-            return ord(self.pkt_data.pop(0))
+            return self.pkt_data.pop(0)
         if len(self.pkt_queue) == 0:
             raise TestError("TestBus: packet queue is empty (unexpected)")
         pkt = self.pkt_queue.pop(0)
@@ -142,12 +142,13 @@ class TestBus(Bus):
             return None
         if pkt.packet_type() != TestPacket.RESPONSE:
             raise TestError("Unexpected packet type '%d'" % pkt.packet_type())
+
         for byte in pkt.packet_data():
-            self.pkt_data += byte
+            self.pkt_data.append(byte)
         self.packets_read_count += 1
         self.packet_bytes_read += pkt.packet_size()
         self.max_packet_size_read = max(pkt.packet_size(), self.max_packet_size_read)
-        return ord(self.pkt_data.pop(0))
+        return self.pkt_data.pop(0)
 
     def write_packet(self, packet_data):
         """Writes a packet to the TestBus.

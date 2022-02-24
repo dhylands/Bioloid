@@ -56,7 +56,7 @@ def parse_byte_array(words, base=0):
     of bytes containing the corresponding hex values.
 
     """
-    data = ""
+    data = b''
     for byte_str in words:
         byte = parse_int(byte_str, "byte", base=base)
         if byte < 0 or byte > 255:
@@ -65,5 +65,5 @@ def parse_byte_array(words, base=0):
                                  "Found: %x" % byte)
             raise ValueError("Expecting byte to be in range 0-256. " +
                              "Found: %s" % byte_str)
-        data += chr(byte)
+        data += bytes([byte])
     return data

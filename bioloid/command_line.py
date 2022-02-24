@@ -31,14 +31,14 @@ def trim(docstring):
     # and split into a list of lines:
     lines = docstring.expandtabs().splitlines()
     # Determine minimum indentation (first line doesn't count):
-    indent = sys.maxint
+    indent = sys.maxsize
     for line in lines[1:]:
         stripped = line.lstrip()
         if stripped:
             indent = min(indent, len(line) - len(stripped))
     # Remove indentation (first line is special):
     trimmed = [lines[0].strip()]
-    if indent < sys.maxint:
+    if indent < sys.maxsize:
         for line in lines[1:]:
             trimmed.append(line[indent:].rstrip())
     # Strip off trailing and leading blank lines:
@@ -925,8 +925,8 @@ def calc_checksum(data):
     """Calculates the checksum for the packet."""
     checksum = 0
     for byte in data[2:]:
-        checksum += ord(byte)
-    return chr(~checksum & 0xff)
+        checksum += byte
+    return bytes([~checksum & 0xff])
 
 
 class TestCommandLine(CommandLineBase):
@@ -964,7 +964,7 @@ class TestCommandLine(CommandLineBase):
         dev_id = parse_int(args.pop(0), "hex-id", base=16)
         cmd_str = args.pop(0)
         cmd_id = packet.Command.parse(cmd_str)
-        data = "\xff\xff" + chr(dev_id) + chr(len(args) + 2) + chr(cmd_id)
+        data = bytes([0xff, 0xff, dev_id, len(args) + 2, cmd_id])
         data += parse_byte_array(args, base=16)
         data += calc_checksum(data)
         self.bus.queue(TestPacket(TestPacket.COMMAND, data))
@@ -998,7 +998,7 @@ class TestCommandLine(CommandLineBase):
         dev_id = parse_int(args.pop(0), "hex-id", base=16)
         error_str = args.pop(0)
         error_code = packet.ErrorCode.parse(error_str)
-        data = "\xff\xff" + chr(dev_id) + chr(len(args) + 2) + chr(error_code)
+        data = bytes([0xff, 0xff, dev_id, len(args) + 2, error_code])
         data += parse_byte_array(args, base=16)
         data += calc_checksum(data)
         self.bus.queue(TestPacket(TestPacket.RESPONSE, data))

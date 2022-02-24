@@ -256,7 +256,7 @@ class Packet(object):
         self.cmd = char
         self.checksum += char
         self.state_func = self.state_cmd_rcvd
-        self.param = []
+        self.param = b''
         return ErrorCode.NOT_DONE
 
     def state_cmd_rcvd(self, char):
@@ -271,7 +271,7 @@ class Packet(object):
                            char, self.checksum)
             return ErrorCode.CHECKSUM
         self.checksum += char
-        self.param.append(chr(char))
+        self.param += bytes([char])
         return ErrorCode.NOT_DONE
 
     def dump_response(self):

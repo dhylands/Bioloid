@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Sample program which shows how to talk to a bioloid servo."""
 

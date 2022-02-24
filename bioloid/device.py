@@ -109,9 +109,9 @@ class Device(object):
 
         """
         data = self.read(reg.offset(), reg.size())
-        val = ord(data[0])
+        val = data[0]
         if reg.size() > 1:
-            val += ord(data[1]) * 256
+            val += data[1] * 256
         return val
 
     def write(self, offset, data, deferred=False):
@@ -132,10 +132,9 @@ class Device(object):
         Raises a bus.Error if any errors occur.
 
         """
-        data = ""
-        data += chr(val % 256)
+        data = bytes([val % 256])
         if reg.size() > 1:
-            data += chr(val / 256)
+            data += bytes([val // 256])
         err = self.write(reg.offset(), data, deferred)
         return err
 

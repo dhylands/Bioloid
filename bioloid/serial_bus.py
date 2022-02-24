@@ -16,7 +16,7 @@ class SerialPort(serial.Serial):
         if timeout < 0.05:
             timeout = 0.05
         kwargs['timeout'] = timeout
-        print "Using timeout of ", timeout
+        print("Using timeout of ", timeout)
         kwargs['bytesize'] = serial.EIGHTBITS
         kwargs['parity'] = serial.PARITY_NONE
         kwargs['stopbits'] = serial.STOPBITS_ONE

@@ -15,7 +15,7 @@ def log_setup(cfg_path='logging.cfg', level=logging.INFO, cfg_env='LOG_CFG'):
         cfg_path = value
     if os.path.exists(cfg_path):
         with open(cfg_path, 'r') as cfg_file:
-            config = yaml.load(cfg_file.read())
+            config = yaml.safe_load(cfg_file.read())
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=level)

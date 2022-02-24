@@ -1,6 +1,6 @@
 """Provides the dump_mem function, which dumps memory in hex/ASCII."""
 
-from __future__ import print_function
+
 
 def default_print(line):
     """Default print routine to use, if one wasn't provided."""
@@ -10,6 +10,7 @@ def default_print(line):
 def dump_mem(buf, prefix="", address=0, line_width=16, show_ascii=True,
              show_addr=True, print_func=None):
     """Dumps out a hex/ASCII representation of the given buffer."""
+    print('dump_mem type of buf =', type(buf))
     if line_width < 0:
         line_width = 16
     if print_func is None:
@@ -27,8 +28,8 @@ def dump_mem(buf, prefix="", address=0, line_width=16, show_ascii=True,
             ch_offset = offset + line_offset
             if ch_offset < buf_len:
                 char = buf[offset + line_offset]
-                line_hex += "%02x " % ord(char)
-                if char < ' ' or char > '~':
+                line_hex += "%02x " % char
+                if char < ord(' ') or char > ord('~'):
                     line_ascii += "."
                 else:
                     line_ascii += "%c" % char

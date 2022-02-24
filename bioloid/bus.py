@@ -179,7 +179,7 @@ class Bus(object):
         figuring out how many extra parameter bytes are being sent.
 
         """
-        self.buffered_data = ""
+        self.buffered_data = b''
         self.send_byte(0xff)
         self.send_byte(0xff)
         self.checksum = 0
@@ -190,11 +190,11 @@ class Bus(object):
     def send_data(self, data):
         """Sends all of the bytes found in 'data'."""
         for byte in data:
-            self.send_byte(ord(byte))
+            self.send_byte(byte)
 
     def buffer_byte(self, byte):
         """Adds a byte to the buffer of data to send."""
-        self.buffered_data += chr(byte)
+        self.buffered_data += bytes([byte])
 
     def write_buffer(self):
         """Writes all of the buffered bytes to the serial port."""

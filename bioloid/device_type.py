@@ -17,13 +17,13 @@ class DeviceTypes(object):
 
     def __iter__(self):
         """For iteration purposes, we want to look like an array."""
-        self._device_types_iter = sorted(self._device_types.values(),
+        self._device_types_iter = sorted(list(self._device_types.values()),
                                          key=lambda dev_type: dev_type.name())
         return self._device_types_iter.__iter__()
 
-    def next(self):
+    def __next__(self):
         """Forward iterator support to the dictionary."""
-        return self._device_types_iter.next()
+        return next(self._device_types_iter)
 
     def add(self, dev_type):
         """Adds a device type to the global collection of device types."""
