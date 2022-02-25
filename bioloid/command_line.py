@@ -368,6 +368,11 @@ class CommandLineBase(Cmd):
                 cmds[i] = cmds[i].replace("_", "-")
         Cmd.print_topics(self, header, cmds, cmdlen, maxcol)
 
+    def do_exit(self, _):
+        """Exits from the program."""
+        CommandLineBase.quitting = True
+        return True
+
     def do_quit(self, _):
         """Exits from the program."""
         CommandLineBase.quitting = True
