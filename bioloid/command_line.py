@@ -483,8 +483,8 @@ class CommandLine(CommandLineBase):
         # We want to read the model and version, which is at offset 0, 1,
         # and 2 so we do it with a single read.
         data = dev.read(0, 3)
-        model = ord(data[0]) + ord(data[1]) * 256
-        version = ord(data[2])
+        model = data[0] + data[1] * 256
+        version = data[2]
         self.log.info("ID: %3d Model: %5u Version: %5u",
                       dev.get_dev_id(), model, version)
 

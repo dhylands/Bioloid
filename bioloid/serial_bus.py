@@ -47,7 +47,7 @@ class SerialBus(Bus):
         """
         data = self.serial_port.read()
         if data:
-            return ord(data[0])
+            return data[0]
         return None
 
     def write_packet(self, packet_data):
